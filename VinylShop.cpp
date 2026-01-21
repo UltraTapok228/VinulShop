@@ -2,6 +2,7 @@
 #include <fstream>
 #include <cstring>
 #include <windows.h>
+#include <iomanip>
 
 using namespace std;
 
@@ -10,13 +11,13 @@ using namespace std;
 // ==================================================
 
 struct VinylRecord {
-    int id;                 // ID пластинки
-    char artist[50];        // Исполнитель
-    char album[50];         // Название альбома
-    char genre[30];         // Жанр
-    int year;               // Год выпуска
-    float price;            // Цена
-    int quantity;           // Количество на складе
+    int id;
+    char artist[50];
+    char album[50];
+    char genre[30];
+    int year;
+    float price;
+    int quantity;
 };
 
 struct Customer {
@@ -25,6 +26,7 @@ struct Customer {
     char phone[20];
     char email[50];
     int purchasesCount;
+    float totalSpent;
 };
 
 // ==================================================
@@ -37,11 +39,15 @@ void deleteDataMenu();
 void searchMenu();
 void sortMenu();
 
-// Работа с пластинками
+// Пластинки
 void addRecord();
 void showAllRecords();
 void deleteRecordById();
 void showSummary();
+
+// Клиенты
+void addCustomer();
+void showCustomers();
 
 // Поиск / фильтрация
 void searchByArtist();
@@ -58,9 +64,9 @@ void sortByYear();
 
 void showMainMenu() {
     system("cls");
-    cout << "=========================================\n";
-    cout << "   МАГАЗИН ВИНИЛОВЫХ ПЛАСТИНОК\n";
-    cout << "=========================================\n";
+    cout << "=============================================\n";
+    cout << "        МАГАЗИН ВИНИЛОВЫХ ПЛАСТИНОК           \n";
+    cout << "=============================================\n";
     cout << "1 - Добавить данные\n";
     cout << "2 - Просмотреть данные\n";
     cout << "3 - Удалить данные\n";
@@ -68,8 +74,8 @@ void showMainMenu() {
     cout << "5 - Сводная информация\n";
     cout << "6 - Сортировка\n";
     cout << "0 - Выход\n";
-    cout << "-----------------------------------------\n";
-    cout << "Введите номер пункта: ";
+    cout << "---------------------------------------------\n";
+    cout << "Ваш выбор: ";
 }
 
 void addDataMenu() {
@@ -78,12 +84,13 @@ void addDataMenu() {
         system("cls");
         cout << "=== ДОБАВЛЕНИЕ ДАННЫХ ===\n";
         cout << "1 - Добавить пластинку\n";
+        cout << "2 - Добавить клиента\n";
         cout << "0 - Назад\n";
         cout << "Ваш выбор: ";
         cin >> choice;
 
-        if (choice == 1)
-            addRecord();
+        if (choice == 1) addRecord();
+        if (choice == 2) addCustomer();
 
     } while (choice != 0);
 }
@@ -116,11 +123,9 @@ void searchMenu() {
         cout << "Ваш выбор: ";
         cin >> choice;
 
-        switch (choice) {
-        case 1: searchByArtist(); break;
-        case 2: searchByGenre(); break;
-        case 3: filterByPrice(); break;
-        }
+        if (choice == 1) searchByArtist();
+        if (choice == 2) searchByGenre();
+        if (choice == 3) filterByPrice();
 
         if (choice != 0) system("pause");
 
@@ -132,16 +137,14 @@ void sortMenu() {
     do {
         system("cls");
         cout << "=== СОРТИРОВКА ===\n";
-        cout << "1 - По цене (возрастание)\n";
-        cout << "2 - По году выпуска (убывание)\n";
+        cout << "1 - По цене\n";
+        cout << "2 - По году выпуска\n";
         cout << "0 - Назад\n";
         cout << "Ваш выбор: ";
         cin >> choice;
 
-        switch (choice) {
-        case 1: sortByPrice(); break;
-        case 2: sortByYear(); break;
-        }
+        if (choice == 1) sortByPrice();
+        if (choice == 2) sortByYear();
 
         if (choice != 0) system("pause");
 
@@ -149,14 +152,13 @@ void sortMenu() {
 }
 
 // ==================================================
-//                РАБОТА С ПЛАСТИНКАМИ
+//              РАБОТА С ПЛАСТИНКАМИ
 // ==================================================
 
 void addRecord() {
     VinylRecord r;
 
-    cout << "\n--- Добавление пластинки ---\n";
-    cout << "ID: ";
+    cout << "\nID: ";
     cin >> r.id;
     cin.ignore();
 
@@ -169,7 +171,7 @@ void addRecord() {
     cout << "Жанр: ";
     cin.getline(r.genre, 30);
 
-    cout << "Год выпуска: ";
+    cout << "Год: ";
     cin >> r.year;
 
     cout << "Цена: ";
@@ -179,10 +181,10 @@ void addRecord() {
     cin >> r.quantity;
 
     ofstream file("records.bin", ios::binary | ios::app);
-    file.write((char*)&r, sizeof(VinylRecord));
+    file.write((char*)&r, sizeof(r));
     file.close();
 
-    cout << "Пластинка успешно добавлена!\n";
+    cout << "Пластинка добавлена.\n";
     system("pause");
 }
 
@@ -191,16 +193,28 @@ void showAllRecords() {
     ifstream file("records.bin", ios::binary);
     VinylRecord r;
 
-    cout << "=== СПИСОК ПЛАСТИНОК ===\n";
+    cout << left
+         << setw(5)  << "ID"
+         << setw(20) << "Исполнитель"
+         << setw(25) << "Альбом"
+         << setw(15) << "Жанр"
+         << setw(8)  << "Год"
+         << setw(10) << "Цена"
+         << setw(10) << "Кол-во"
+         << endl;
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
-        cout << r.id << " | "
-             << r.artist << " | "
-             << r.album << " | "
-             << r.genre << " | "
-             << r.year << " | "
-             << r.price << " | "
-             << r.quantity << endl;
+    cout << string(93, '-') << endl;
+
+    while (file.read((char*)&r, sizeof(r))) {
+        cout << left
+             << setw(5)  << r.id
+             << setw(20) << r.artist
+             << setw(25) << r.album
+             << setw(15) << r.genre
+             << setw(8)  << r.year
+             << setw(10) << fixed << setprecision(2) << r.price
+             << setw(10) << r.quantity
+             << endl;
     }
 
     file.close();
@@ -208,8 +222,14 @@ void showAllRecords() {
 }
 
 void deleteRecordById() {
+    // очистка экрана
+    system("cls");
+
+    // Показываем таблицу перед удалением
+    showAllRecords();
+
     int id;
-    cout << "Введите ID для удаления: ";
+    cout << "\nВведите ID для удаления: ";
     cin >> id;
 
     ifstream file("records.bin", ios::binary);
@@ -218,12 +238,13 @@ void deleteRecordById() {
     VinylRecord r;
     bool found = false;
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
+    while (file.read((char*)&r, sizeof(r))) {
         if (r.id != id)
-            temp.write((char*)&r, sizeof(VinylRecord));
+            temp.write((char*)&r, sizeof(r));
         else
             found = true;
     }
+    
 
     file.close();
     temp.close();
@@ -231,57 +252,80 @@ void deleteRecordById() {
     remove("records.bin");
     rename("temp.bin", "records.bin");
 
-    cout << (found ? "Пластинка удалена.\n" : "Пластинка не найдена.\n");
+    cout << (found ? "Запись удалена.\n" : "ID не найден.\n");
     system("pause");
 }
 
 // ==================================================
-//              СВОДНАЯ ИНФОРМАЦИЯ
+//                    КЛИЕНТЫ
 // ==================================================
 
-void showSummary() {
+void addCustomer() {
+    Customer c;
 
-    ifstream file("records.bin", ios::binary);
-    if (!file) {
-        cout << "Файл с данными не найден.\n";
-        return;
-    }
+    cout << "\nID клиента: ";
+    cin >> c.id;
+    cin.ignore();
 
-    VinylRecord r;
-    int recordsCount = 0;
-    int totalQuantity = 0;
-    float totalCost = 0;
-    float minPrice = 0, maxPrice = 0;
-    bool first = true;
+    cout << "ФИО: ";
+    cin.getline(c.name, 50);
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
-        recordsCount++;
-        totalQuantity += r.quantity;
-        totalCost += r.price * r.quantity;
+    cout << "Телефон: ";
+    cin.getline(c.phone, 20);
 
-        if (first) {
-            minPrice = maxPrice = r.price;
-            first = false;
-        } else {
-            if (r.price < minPrice) minPrice = r.price;
-            if (r.price > maxPrice) maxPrice = r.price;
-        }
+    cout << "Email: ";
+    cin.getline(c.email, 50);
+
+    cout << "Кол-во покупок: ";
+    cin >> c.purchasesCount;
+
+    cout << "Сумма покупок: ";
+    cin >> c.totalSpent;
+
+    ofstream file("customers.bin", ios::binary | ios::app);
+    file.write((char*)&c, sizeof(c));
+    file.close();
+
+    cout << "Клиент добавлен.\n";
+    system("pause");
+}
+
+void showCustomers() {
+    ifstream file("customers.bin", ios::binary);
+    Customer c;
+
+    cout << left
+         << setw(5)  << "ID"
+         << setw(25) << "ФИО"
+         << setw(10) << "Покупки"
+         << setw(15) << "Сумма"
+         << endl;
+
+    cout << string(55, '-') << endl;
+
+    while (file.read((char*)&c, sizeof(c))) {
+        cout << left
+             << setw(5)  << c.id
+             << setw(25) << c.name
+             << setw(10) << c.purchasesCount
+             << setw(15) << fixed << setprecision(2) << c.totalSpent
+             << endl;
     }
 
     file.close();
+}
 
-    if (recordsCount == 0) {
-        cout << "Данных нет.\n";
-        return;
-    }
+// ==================================================
+//                СВОДНАЯ ИНФОРМАЦИЯ
+// ==================================================
 
-    cout << "\n=== СВОДНАЯ ИНФОРМАЦИЯ ===\n";
-    cout << "Количество пластинок: " << recordsCount << endl;
-    cout << "Общее количество экземпляров: " << totalQuantity << endl;
-    cout << "Общая стоимость: " << totalCost << " руб.\n";
-    cout << "Средняя цена: " << totalCost / totalQuantity << " руб.\n";
-    cout << "Минимальная цена: " << minPrice << " руб.\n";
-    cout << "Максимальная цена: " << maxPrice << " руб.\n";
+void showSummary() {
+    system("cls");
+
+    cout << "=== КЛИЕНТЫ ===\n";
+    showCustomers();
+
+    system("pause");
 }
 
 // ==================================================
@@ -297,10 +341,9 @@ void searchByArtist() {
     ifstream file("records.bin", ios::binary);
     VinylRecord r;
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
-        if (strcmp(r.artist, artist) == 0) {
+    while (file.read((char*)&r, sizeof(r))) {
+        if (strcmp(r.artist, artist) == 0)
             cout << r.artist << " | " << r.album << " | " << r.price << endl;
-        }
     }
 
     file.close();
@@ -315,10 +358,9 @@ void searchByGenre() {
     ifstream file("records.bin", ios::binary);
     VinylRecord r;
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
-        if (strcmp(r.genre, genre) == 0) {
+    while (file.read((char*)&r, sizeof(r))) {
+        if (strcmp(r.genre, genre) == 0)
             cout << r.artist << " | " << r.album << " | " << r.price << endl;
-        }
     }
 
     file.close();
@@ -326,18 +368,17 @@ void searchByGenre() {
 
 void filterByPrice() {
     float minP, maxP;
-    cout << "Минимальная цена: ";
+    cout << "Мин. цена: ";
     cin >> minP;
-    cout << "Максимальная цена: ";
+    cout << "Макс. цена: ";
     cin >> maxP;
 
     ifstream file("records.bin", ios::binary);
     VinylRecord r;
 
-    while (file.read((char*)&r, sizeof(VinylRecord))) {
-        if (r.price >= minP && r.price <= maxP) {
+    while (file.read((char*)&r, sizeof(r))) {
+        if (r.price >= minP && r.price <= maxP)
             cout << r.artist << " | " << r.album << " | " << r.price << endl;
-        }
     }
 
     file.close();
@@ -394,16 +435,12 @@ int main() {
         showMainMenu();
         cin >> choice;
 
-        switch (choice) {
-        case 1: addDataMenu(); break;
-        case 2: showAllRecords(); break;
-        case 3: deleteDataMenu(); break;
-        case 4: searchMenu(); break;
-        case 5: showSummary(); system("pause"); break;
-        case 6: sortMenu(); break;
-        case 0: cout << "Выход из программы...\n"; break;
-        default: cout << "Неверный пункт меню.\n";
-        }
+        if (choice == 1) addDataMenu();
+        if (choice == 2) showAllRecords();
+        if (choice == 3) deleteDataMenu();
+        if (choice == 4) searchMenu();
+        if (choice == 5) showSummary();
+        if (choice == 6) sortMenu();
 
     } while (choice != 0);
 
